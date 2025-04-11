@@ -1,0 +1,14 @@
+{
+      "C_Cpp.intelliSenseEngine": "default",
+      "idf.espIdfPath": "/Users/juergen/esp/v5.4/esp-idf",
+      "idf.pythonInstallPath": "/usr/local/bin/python3",
+      "idf.openOcdConfigs": [
+            "interface/ftdi/esp32_devkitj_v1.cfg",
+            "target/esp32s3.cfg"
+      ],
+      "idf.port": "/dev/tty.usbmodem14701",
+      "idf.toolsPath": "/Users/juergen/.espressif",
+      "idf.customExtraVars": {
+            "IDF_TARGET": "esp32s3"
+      }
+}
