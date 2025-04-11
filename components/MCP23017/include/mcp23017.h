@@ -9,7 +9,7 @@
 
 #include "driver/i2c_master.h"
 
-// Register
+// Register Port A
 #define MCP23017_IODIRA		0x00
 #define MCP23017_IPOLA 		0x02
 #define MCP23017_GPINTENA 	0x04
@@ -22,7 +22,7 @@
 #define MCP23017_GPIOA 		0x12
 #define MCP23017_OLATA 		0x14
 
-
+// Register Port B
 #define MCP23017_IODIRB 	0x01
 #define MCP23017_IPOLB 		0x03
 #define MCP23017_GPINTENB 	0x05
@@ -60,16 +60,16 @@ typedef enum {
 */
 typedef enum {
     MCP23017_IODIR	= 0x00,
-    MCP23017_IPOL	= 0x01,
+    MCP23017_IPOL	   = 0x01,
     MCP23017_GPINTEN	= 0x02,
     MCP23017_DEFVAL	= 0x03,
     MCP23017_INTCON	= 0x04,
     MCP23017_IOCON	= 0x05,
-    MCP23017_GPPU	= 0x06,
-    MCP23017_INTF	= 0x07,
+    MCP23017_GPPU	   = 0x06,
+    MCP23017_INTF	   = 0x07,
     MCP23017_INTCAP	= 0x08,
-    MCP23017_GPIO	= 0x09,
-    MCP23017_OLAT	= 0x0A
+    MCP23017_GPIO	   = 0x09,
+    MCP23017_OLAT	   = 0x0A
 } mcp23017_reg_t;
 
 /*
@@ -92,16 +92,17 @@ typedef enum {
    the MCP23017 device.
 */
 typedef struct {
-   i2c_port_num_t port;           // I2C-Port-Nummer
-   gpio_num_t scl_pin;            // SCL-Pin-Nummer
-   gpio_num_t sda_pin;            // SDA-Pin-Nummer
-   uint8_t i2c_addr;              // I2C-Adresse des MCP23017
-   bool scl_pullup_en;
-   bool sda_pullup_en;
-   i2c_master_bus_handle_t bus_handle;   // I2C-Bus-Handle
-   i2c_master_dev_handle_t dev_handle;   // I2C-Geräte-Handle
+   i2c_port_num_t port;                // I2C-Port-Nummer
+   gpio_num_t scl_pin;                 // SCL-Pin-Nummer
+   gpio_num_t sda_pin;                 // SDA-Pin-Nummer
+   uint8_t i2c_addr;                   // I2C-Adresse des MCP23017
+   uint32_t i2c_freq;                  // I2C-Frequenz (Hz)
+   bool enable_internal_pullups;       // Interne Pull-ups aktivieren
+   gpio_num_t int_pin;                 // Interrupt-Pin
+   bool use_interrupts;                // Interrupts verwenden
+   i2c_master_bus_handle_t bus_handle; // I2C-Bus-Handle
+   i2c_master_dev_handle_t dev_handle; // I2C-Geräte-Handle
 } mcp23017_t;
-
 /*
    Function prototypes
 */

@@ -28,6 +28,7 @@ mcp23017_err_t mcp23017_init(mcp23017_t *mcp)
 {
     esp_err_t ret;
 
+    // I2C-Bus-Konfiguration
     i2c_master_bus_config_t bus_config = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .i2c_port = mcp->port,
@@ -35,9 +36,7 @@ mcp23017_err_t mcp23017_init(mcp23017_t *mcp)
         .sda_io_num = mcp->sda_pin,
         .glitch_ignore_cnt = 7,
         .flags = {
-            .enable_internal_pullup = 1
-        }
-    };
+            .enable_internal_pullup = 1}};
 
     // Erstellen des I2C-Bus
     ret = i2c_new_master_bus(&bus_config, &mcp->bus_handle);
@@ -52,7 +51,7 @@ mcp23017_err_t mcp23017_init(mcp23017_t *mcp)
     i2c_device_config_t dev_config = {
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
         .device_address = mcp->i2c_addr,
-        .scl_speed_hz = 100000, // 100 kHz
+        .scl_speed_hz = mcp->i2c_freq > 0 ? mcp->i2c_freq : 100000, // Benutze i2c_freq oder Standard 100 kHz
     };
 
     // Erstellen des Geräte-Handles
@@ -68,6 +67,24 @@ mcp23017_err_t mcp23017_init(mcp23017_t *mcp)
     // Alle I/Os als Ausgänge konfigurieren
     mcp23017_write_register(mcp, MCP23017_IODIR, GPIOA, 0x00);
     mcp23017_write_register(mcp, MCP23017_IODIR, GPIOB, 0x00);
+
+    // Wenn Interrupts verwendet werden sollen, konfigurieren
+    if (mcp->use_interrupts && mcp->int_pin >= 0)
+    {
+        // Hier können Sie den Interrupt-Code hinzufügen
+        // z.B. GPIO konfigurieren, Interrupt-Register des MCP23017 konfigurieren
+        ESP_LOGV(TAG, "Interrupts werden verwendet, INT-Pin: %d", mcp->int_pin);
+
+        // Beispiel für die Interrupt-Konfiguration (muss an Ihre Anforderungen angepasst werden)
+        // gpio_config_t io_conf = {
+        //     .pin_bit_mask = (1ULL << mcp->int_pin),
+        //     .mode = GPIO_MODE_INPUT,
+        //     .pull_up_en = GPIO_PULLUP_DISABLE,
+        //     .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        //     .intr_type = GPIO_INTR_NEGEDGE,
+        // };
+        // gpio_config(&io_conf);
+    }
 
     return MCP23017_ERR_OK;
 }
