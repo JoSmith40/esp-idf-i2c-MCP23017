@@ -10,5 +10,9 @@
       "idf.toolsPath": "/Users/juergen/.espressif",
       "idf.customExtraVars": {
             "IDF_TARGET": "esp32s3"
-      }
+      },
+      "files.associations": {
+            "i2c_types.h": "c"
+      },
+      "idf.flashType": "UART"
 }

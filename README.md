@@ -1,32 +1,11 @@
-# _Sample project_
+## Interfacing an MCP23017 I2C GPIO expander with ESP32
 
-(See the README.md file in the upper level 'examples' directory for more information about examples.)
+The MCP23017 is an I2C bus GPIO expander. This is an demonstration application for the ESP32 in the ESP-IDF environment.
 
-This is the simplest buildable example. The example is used by command `idf.py create-project`
-that copies the project to user specified path and set it's name. For more information follow the [docs page](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html#start-a-new-project)
+![](https://github.com/NSBum/esp32-mcp23017-demo/blob/master/i2clogic.png)
 
+### Usage
 
+To use this application, you must have the ESP-IDF environment installed. After cloning, you will need to run `make menuconfig` to set up the proper make files and then `make flash` to flash it onto your device.
 
-## How to use example
-We encourage the users to use the example as a template for the new projects.
-A recommended way is to follow the instructions on a [docs page](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html#start-a-new-project).
-
-## Example folder contents
-
-The project **sample_project** contains one source file in C language [main.c](main/main.c). The file is located in folder [main](main).
-
-ESP-IDF projects are built using CMake. The project build configuration is contained in `CMakeLists.txt`
-files that provide set of directives and instructions describing the project's source files and targets
-(executable, library, or both). 
-
-Below is short explanation of remaining files in the project folder.
-
-```
-├── CMakeLists.txt
-├── main
-│   ├── CMakeLists.txt
-│   └── main.c
-└── README.md                  This is the file you are currently reading
-```
-Additionally, the sample project contains Makefile and component.mk files, used for the legacy Make based build system. 
-They are not used or needed when building with CMake and idf.py.
+**Note**: The MCP23017 component in this demonstration does not yet support interrupt functionality. Also, the intent isn't really to duplicate Arduino `digitalWrite` type functionality. After spending a little time with the datasheet and learning how to set and clear bits, you can easily accomplish what you need without trying to emulate Arduino.
