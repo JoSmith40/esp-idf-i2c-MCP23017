@@ -15,11 +15,18 @@ Getestet mit LilyGo T-Display-S3 (ESP32-S3R8 = 16MB Flash, 320x170)
 #include "esp_log.h"
 #include "driver/i2c_master.h"
 #include "mcp23017.h"
+#include "esp_timer.h"
 
 #define I2C_SCL 17
 #define I2C_SDA 18
 #define MCP23017_ADDR 0x20
 #define I2C_FREQ_HZ 400000 // 400 kHz (100 ... 800 kHz)
+
+// Zeitmessungsvariablen
+int64_t start_time, end_time, elapsed_time;
+int64_t total_time = 0;
+int iterations = 0;
+const int print_interval = 5000; // Ausgabe alle 1000 Iterationen
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Impulszähler für 8 Eingänge
@@ -28,9 +35,9 @@ Getestet mit LilyGo T-Display-S3 (ESP32-S3R8 = 16MB Flash, 320x170)
 uint16_t counter[NUM_INPUTS] = {0}; // Array für die Zähler
 float kWh[NUM_INPUTS] = {0.0};      // Array für kWh
 
-volatile uint8_t captureA = 0;
-volatile uint8_t currentA = 0;
-volatile uint8_t captureValue = 0;
+uint8_t captureA = 0;
+uint8_t currentA = 0;
+uint8_t captureValue = 0;
 
 static const char *TAG = "main.c says: ";
 
@@ -48,7 +55,6 @@ void processImpulses(uint8_t captureValue)
       }
       lastCapture = captureValue;
 }
-
 
 void app_main(void)
 {
@@ -124,10 +130,36 @@ void app_main(void)
       // Endlose Schleife, um das Programm am Laufen zu halten
       while (1)
       {
+            start_time = esp_timer_get_time(); // Startzeit in Mikrosekunden
+
+
             mcp23017_read_register(&mcp, MCP23017_GPIO, GPIOA, &captureValue); // Lese Port A
-            //processImpulses(captureValue);                                     // Verarbeite Impulse
+            processImpulses(captureValue);                                    // Verarbeite Impulse
             mcp23017_write_register(&mcp, MCP23017_GPIO, GPIOB, captureValue); // Setze GPIOB-Pins Port B
 
-            vTaskDelay(pdMS_TO_TICKS(1));
+            //vTaskDelay(pdMS_TO_TICKS(1));
+
+
+            // Binäre Darstellung der GPIO-Werte (optional)
+            char bin_str[9];
+            for (int i = 0; i < 8; i++) {
+                bin_str[i] = (captureValue & (0x80 >> i)) ? '1' : '0';
+            }
+            bin_str[8] = '\0';
+
+
+            // Zeitmessung in µs
+            end_time = esp_timer_get_time(); // Endzeit in Mikrosekunden
+            elapsed_time = end_time - start_time; // Berechnung der verstrichenen Zeit
+            total_time += elapsed_time; // Gesamtzeit aktualisieren
+            iterations++; // Iterationen erhöhen
+
+            // Statistik ausgeben
+            if (iterations % print_interval == 0)
+            {
+                  ESP_LOGI(TAG, "GPIO-Wert: 0x%02X (Bits: %s)", captureValue, bin_str);
+                  ESP_LOGI(TAG, "Zeitmessung: Aktuelle Iteration: %lld µs, Durchschnitt: %lld µs",
+                           elapsed_time, total_time / iterations);
+            }
       }
 }
