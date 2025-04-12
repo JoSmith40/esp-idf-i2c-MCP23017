@@ -6,10 +6,30 @@
 
 #include "esp_log.h"
 
-static const char *TAG = "MCP23017";
+static const char *TAG = "mcp23017.c says: ";
 
 /**
- * Converts generic register and group (A/B) to register address
+ * @brief Konvertiert einen MCP23017-Fehlercode in einen lesbaren String
+ * @param err der Fehlercode
+ * @return ein lesbarer String, der den Fehler beschreibt
+ */
+const char *mcp23017_err_to_string(mcp23017_err_t err)
+{
+    switch (err)
+    {
+    case MCP23017_ERR_OK:
+        return "NO ERROR";
+    case MCP23017_ERR_INSTALL:
+        return "INSTALLATION ERROR";
+    case MCP23017_ERR_FAIL:
+        return "GENERAL ERROR";
+    default:
+        return "UNKNOWN ERROR";
+    }
+}
+
+/**
+ * @brief Converts generic register and group (A/B) to register address
  * @param reg the generic register index
  * @param group the group (A/B) to compute offset
  * @return The register address specified by the parameters
@@ -20,55 +40,33 @@ uint8_t mcp23017_register(mcp23017_reg_t reg, mcp23017_gpio_t group)
 }
 
 /**
- * Initializes the MCP23017
+ * @brief Initializes the MCP23017
  * @param mcp the MCP23017 interface structure
- * @return an error code or MCP23017_ERR_OK if no error encountered
+ * @return an error code or MCP23017_ERR_OK
  */
 mcp23017_err_t mcp23017_init(mcp23017_t *mcp)
 {
     esp_err_t ret;
 
-    // I2C-Bus-Konfiguration
-    i2c_master_bus_config_t bus_config = {
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .i2c_port = mcp->port,
-        .scl_io_num = mcp->scl_pin,
-        .sda_io_num = mcp->sda_pin,
-        .glitch_ignore_cnt = 7,
-        .flags = {
-            .enable_internal_pullup = 1}};
-
-    // Erstellen des I2C-Bus
-    ret = i2c_new_master_bus(&bus_config, &mcp->bus_handle);
-    if (ret != ESP_OK)
-    {
-        ESP_LOGE(TAG, "I2C-Bus-Initialisierung fehlgeschlagen");
-        return MCP23017_ERR_CONFIG;
-    }
-    ESP_LOGV(TAG, "I2C-Bus initialisiert");
-
-    // Konfiguration des I2C-Geräts
+    // Device Configuration
     i2c_device_config_t dev_config = {
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
         .device_address = mcp->i2c_addr,
-        .scl_speed_hz = mcp->i2c_freq > 0 ? mcp->i2c_freq : 100000, // Benutze i2c_freq oder Standard 100 kHz
+        .scl_speed_hz = mcp->i2c_freq,
     };
 
-    // Erstellen des Geräte-Handles
+    // Create the device handle
     ret = i2c_master_bus_add_device(mcp->bus_handle, &dev_config, &mcp->dev_handle);
     if (ret != ESP_OK)
     {
-        ESP_LOGE(TAG, "I2C-Geräte-Initialisierung fehlgeschlagen");
+        ESP_LOGE(TAG, "ERR: I2C device initialization failed: %s (ESP-Err: %s)",
+                 mcp23017_err_to_string(MCP23017_ERR_INSTALL), esp_err_to_name(ret));
         i2c_del_master_bus(mcp->bus_handle);
         return MCP23017_ERR_INSTALL;
     }
-    ESP_LOGV(TAG, "I2C-Gerät initialisiert");
+    ESP_LOGV(TAG, "I2C device initialized: %s", mcp23017_err_to_string(MCP23017_ERR_OK));
 
-    // Alle I/Os als Ausgänge konfigurieren
-    mcp23017_write_register(mcp, MCP23017_IODIR, GPIOA, 0x00);
-    mcp23017_write_register(mcp, MCP23017_IODIR, GPIOB, 0x00);
-
-    // Wenn Interrupts verwendet werden sollen, konfigurieren
+    // only use for interrupts
     if (mcp->use_interrupts && mcp->int_pin >= 0)
     {
         // Hier können Sie den Interrupt-Code hinzufügen
@@ -90,7 +88,7 @@ mcp23017_err_t mcp23017_init(mcp23017_t *mcp)
 }
 
 /**
- * Writes a value to an MCP23017 register
+ * @brief a value to an MCP23017 register
  * @param mcp the MCP23017 interface structure
  * @param reg A generic register index
  * @param group the group (A/B) to compute register address offset
@@ -105,14 +103,15 @@ mcp23017_err_t mcp23017_write_register(mcp23017_t *mcp, mcp23017_reg_t reg, mcp2
     esp_err_t ret = i2c_master_transmit(mcp->dev_handle, write_buf, sizeof(write_buf), -1);
     if (ret != ESP_OK)
     {
-        ESP_LOGE(TAG, "ERROR: unable to write to register");
+        ESP_LOGE(TAG, "ERROR: unable to write to register: %s (ESP-Err: %s)",
+                 mcp23017_err_to_string(MCP23017_ERR_FAIL), esp_err_to_name(ret));
         return MCP23017_ERR_FAIL;
     }
     return MCP23017_ERR_OK;
 }
 
 /**
- * Reads a value to an MCP23017 register
+ * @brief a value to an MCP23017 register
  * @param mcp the MCP23017 interface structure
  * @param reg A generic register index
  * @param group the group (A/B) to compute register address offset
@@ -120,7 +119,7 @@ mcp23017_err_t mcp23017_write_register(mcp23017_t *mcp, mcp23017_reg_t reg, mcp2
  * @return an error code or MCP23017_ERR_OK if no error encountered
  */
 /*
-// Alternatives lesen! ###################
+// Alternate lesen! ###################
 mcp23017_err_t mcp23017_read_register(mcp23017_t *mcp, mcp23017_reg_t reg, mcp23017_gpio_t group, uint8_t *data) {
     uint8_t r = mcp23017_register(reg, group);
     esp_err_t ret;
@@ -134,7 +133,6 @@ mcp23017_err_t mcp23017_read_register(mcp23017_t *mcp, mcp23017_reg_t reg, mcp23
     return MCP23017_ERR_OK;
 }
 */
-
 mcp23017_err_t mcp23017_read_register(mcp23017_t *mcp, mcp23017_reg_t reg, mcp23017_gpio_t group, uint8_t *data)
 {
     uint8_t r = mcp23017_register(reg, group);
@@ -157,7 +155,7 @@ mcp23017_err_t mcp23017_read_register(mcp23017_t *mcp, mcp23017_reg_t reg, mcp23
 }
 
 /**
- * Sets a bit in a current register value
+ * @brief a bit in a current register value
  * @param mcp address of the MCP23017 data structure
  * @param bit The number of the bit to set
  * @param reg A generic register index
@@ -184,7 +182,7 @@ mcp23017_err_t mcp23017_set_bit(mcp23017_t *mcp, uint8_t bit, mcp23017_reg_t reg
 }
 
 /**
- * Clears a bit from a current register value
+ * @brief Clears a bit from a current register value
  * @param mcp address of the MCP23017 data structure
  * @param bit The number of the bit to set
  * @param reg A generic register index
@@ -210,6 +208,11 @@ mcp23017_err_t mcp23017_clear_bit(mcp23017_t *mcp, uint8_t bit, mcp23017_reg_t r
     return MCP23017_ERR_OK;
 }
 
+/**
+ * @brief Delete the MCP23017
+ * @param mcp the MCP23017 interface structure
+ * @return an error code or MCP23017_ERR_OK if no error encountered
+ */
 mcp23017_err_t mcp23017_deinit(mcp23017_t *mcp)
 {
     esp_err_t ret;

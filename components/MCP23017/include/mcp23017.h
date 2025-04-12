@@ -9,7 +9,7 @@
 
 #include "driver/i2c_master.h"
 
-// Register Port A
+// Port A register
 #define MCP23017_IODIRA		0x00
 #define MCP23017_IPOLA 		0x02
 #define MCP23017_GPINTENA 	0x04
@@ -22,7 +22,7 @@
 #define MCP23017_GPIOA 		0x12
 #define MCP23017_OLATA 		0x14
 
-// Register Port B
+// Port B register
 #define MCP23017_IODIRB 	0x01
 #define MCP23017_IPOLB 		0x03
 #define MCP23017_GPINTENB 	0x05
@@ -37,12 +37,15 @@
 
 #define MCP23017_DEFAULT_ADDR	0x20
 
-/*
-   mcp23017_err_t
-
-   Specifies an error code returned by functions
-   in the MCP23017 API
-*/
+/**
+ * @brief  Specifies an error code returned by functions in the MCP23017 AP
+ * @note  The error codes are defined as follows:
+ *        - MCP23017_ERR_OK:     No error
+ *        - MCP23017_ERR_CONFIG: Configuration error
+ *        - MCP23017_ERR_INSTALL: Installation error
+ *        - MCP23017_ERR_FAIL:   General failure
+ * @return An error code
+ */
 typedef enum {
    MCP23017_ERR_OK      = 0x00,
    MCP23017_ERR_CONFIG  = 0x01,
@@ -50,13 +53,20 @@ typedef enum {
    MCP23017_ERR_FAIL    = 0x03
 } mcp23017_err_t;
 
-/*
-   mcp23017_reg_t
+/**
+ * @brief Konvertiert einen MCP23017-Fehlercode in einen lesbaren String
+ * @param err der Fehlercode
+ * @return ein lesbarer String, der den Fehler beschreibt
+ */
+const char *mcp23017_err_to_string(mcp23017_err_t err);
 
-   Specifies a generic register which
-   can point to either group A or
-   group B depending on an offset that
-   can be applied.
+/**
+*   @brief  Specifies register index
+*   @note   a generic register which
+*   can point to either group A or
+*   group B depending on an offset that
+*   can be applied.
+* @return  A register index
 */
 typedef enum {
     MCP23017_IODIR	= 0x00,
@@ -72,40 +82,35 @@ typedef enum {
     MCP23017_OLAT	   = 0x0A
 } mcp23017_reg_t;
 
-/*
-   mcp23017_gpio_t
-
-   Specifies a group of GPIO pins, either
-   group A or group B
-*/
+/**
+ * @brief Specifies a GPIO pin group
+ * @note The MCP23017 has two groups A or B
+ */
 typedef enum {
     GPIOA = 0x00,
     GPIOB = 0x01
 } mcp23017_gpio_t;
 
-/*
-   mcp23017_t
-
-   Specifies an interface configuration
+/**
+ * @brief  Specifies a interface configuration
+ * @note interface configuration
    for the MCP23017. This structure is
    used to initialize the I2C bus and
    the MCP23017 device.
-*/
+ */
 typedef struct {
-   i2c_port_num_t port;                // I2C-Port-Nummer
-   gpio_num_t scl_pin;                 // SCL-Pin-Nummer
-   gpio_num_t sda_pin;                 // SDA-Pin-Nummer
    uint8_t i2c_addr;                   // I2C-Adresse des MCP23017
    uint32_t i2c_freq;                  // I2C-Frequenz (Hz)
    bool enable_internal_pullups;       // Interne Pull-ups aktivieren
-   gpio_num_t int_pin;                 // Interrupt-Pin
+   uint8_t int_pin;                    // Interrupt-Pin
    bool use_interrupts;                // Interrupts verwenden
    i2c_master_bus_handle_t bus_handle; // I2C-Bus-Handle
    i2c_master_dev_handle_t dev_handle; // I2C-Geräte-Handle
 } mcp23017_t;
-/*
-   Function prototypes
-*/
+
+/**
+ * @brief  Function prototypes
+ */
 mcp23017_err_t mcp23017_init(mcp23017_t *mcp);
 mcp23017_err_t mcp23017_write_register(mcp23017_t *mcp, mcp23017_reg_t reg, mcp23017_gpio_t group, uint8_t v);
 mcp23017_err_t mcp23017_read_register(mcp23017_t *mcp, mcp23017_reg_t reg, mcp23017_gpio_t group, uint8_t *data);
