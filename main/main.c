@@ -60,24 +60,40 @@ void app_main(void)
 
       // Initializing the MCP23017
       mcp23017_err_t err = mcp23017_init(&mcp);
-
       if (err != MCP23017_ERR_OK)
       {
             ESP_LOGE(TAG, "MCP23017 Initialisierung fehlgeschlagen: %s", mcp23017_err_to_string(err));
             return;
       }
-      ESP_LOGI(TAG, "MCP23017 Initialisierung erfolgreich: %s", mcp23017_err_to_string(err));
+      ESP_LOGI(TAG, "MCP23017 initialisiert: %s", mcp23017_err_to_string(err));
       ESP_LOGI(TAG, "MCP23017 Address: 0x%02X", mcp.i2c_addr);
       ESP_LOGI(TAG, "I2C Speed: %u kHz", (unsigned int)(mcp.i2c_freq / 1000));
 
-
-      // Konfiguriere I/Os
+      // Configuration MCP23017 for System
       mcp23017_write_register(&mcp, MCP23017_IODIR, GPIOA, 0xFF); // Setze alle GPIOA-Pins als Eingänge
       mcp23017_write_register(&mcp, MCP23017_IODIR, GPIOB, 0x00); // Setze alle GPIOB-Pins als Ausgänge
-
+      mcp23017_write_register(&mcp, MCP23017_IPOL, GPIOA, 0x00);  // Setze IPOL-Register, Port A
+      mcp23017_write_register(&mcp, MCP23017_IPOL, GPIOB, 0x00);  // Setze IPOL-Register, Port B
+      mcp23017_write_register(&mcp, MCP23017_GPPU, GPIOA, 0x00);  // Setze GPPU-Register, Port A
+      mcp23017_write_register(&mcp, MCP23017_GPIO, GPIOA, 0x00);  // Setze GPIOA-Pins auf LOW
+      mcp23017_write_register(&mcp, MCP23017_GPIO, GPIOB, 0xFF);  // Setze GPIOB-Pins auf HIGH
+      mcp23017_write_register(&mcp, MCP23017_GPINTEN, GPIOA, 0xFF); // Aktiviere Interrupts für alle GPIOA-Pins
+      mcp23017_write_register(&mcp, MCP23017_GPINTEN, GPIOB, 0x00); // Deaktiviere Interrupts für alle GPIOB-Pins
+      mcp23017_write_register(&mcp, MCP23017_INTCON, GPIOA, 0xFF); // Setze INTCON-Register, Port A
+      mcp23017_write_register(&mcp, MCP23017_DEFVAL, GPIOA, 0xFF); // Setze DEFVAL-Register, Port A
+      mcp23017_write_register(&mcp, MCP23017_IOCON, GPIOA, 0x20); // Setze IOCON-Register
+      uint8_t value;
+      mcp23017_read_register(&mcp, MCP23017_INTCAP, GPIOA, &value); // Lese INTCAP-Register clear Interrupts
+      ESP_LOGI(TAG, "INTCAP-Wert beim Interrupt: 0x%02X", value);
+      if (err != MCP23017_ERR_OK)
+      {
+            ESP_LOGE(TAG, "MCP23017 Konfiguration fehlgeschlagen: %s", mcp23017_err_to_string(err));
+            return;
+      }
+      ESP_LOGI(TAG, "MCP23017 konfiguriert %s", mcp23017_err_to_string(err));
+      ESP_LOGI(TAG, "MCP23017 Port A = INPUTS, Interrupts akktiv LOW");
+      ESP_LOGI(TAG, "MCP23017 Port B = OUTPUTS");
       // Hier können Sie mit dem MCP23017 arbeiten
-      // Beispiel: Alle Ausgänge von GPIOA auf HIGH setzen
-      // mcp23017_write_register(&mcp, MCP23017_GPIO, GPIOA, 0xFF);
 
       // Endlose Schleife, um das Programm am Laufen zu halten
       while (1)
