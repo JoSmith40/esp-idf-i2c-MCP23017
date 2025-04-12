@@ -19,9 +19,36 @@ Getestet mit LilyGo T-Display-S3 (ESP32-S3R8 = 16MB Flash, 320x170)
 #define I2C_SCL 17
 #define I2C_SDA 18
 #define MCP23017_ADDR 0x20
-#define I2C_FREQ_HZ 100000 // 400 kHz (100 ... 800 kHz)
+#define I2C_FREQ_HZ 400000 // 400 kHz (100 ... 800 kHz)
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Impulszähler für 8 Eingänge
+// ──────────────────────────────────────────────────────────────────────────────
+#define NUM_INPUTS 8
+uint16_t counter[NUM_INPUTS] = {0}; // Array für die Zähler
+float kWh[NUM_INPUTS] = {0.0};      // Array für kWh
+
+volatile uint8_t captureA = 0;
+volatile uint8_t currentA = 0;
+volatile uint8_t captureValue = 0;
 
 static const char *TAG = "main.c says: ";
+
+void processImpulses(uint8_t captureValue)
+{
+      static uint8_t lastCapture = 0;
+      for (int i = 0; i < NUM_INPUTS; i++)
+      {
+            // Bit war vorher 1 und ist jetzt 0 => fallende Flanke
+            if (!(captureValue & (1 << i)) && (lastCapture & (1 << i)))
+            {
+                  counter[i]++;                 // Zähler erhöhen
+                  kWh[i] = counter[i] / 1000.0; // optional: 1000 Impulse = 1 kWh
+            }
+      }
+      lastCapture = captureValue;
+}
+
 
 void app_main(void)
 {
@@ -70,20 +97,20 @@ void app_main(void)
       ESP_LOGI(TAG, "I2C Speed: %u kHz", (unsigned int)(mcp.i2c_freq / 1000));
 
       // Configuration MCP23017 for System
-      mcp23017_write_register(&mcp, MCP23017_IODIR, GPIOA, 0xFF); // Setze alle GPIOA-Pins als Eingänge
-      mcp23017_write_register(&mcp, MCP23017_IODIR, GPIOB, 0x00); // Setze alle GPIOB-Pins als Ausgänge
-      mcp23017_write_register(&mcp, MCP23017_IPOL, GPIOA, 0x00);  // Setze IPOL-Register, Port A
-      mcp23017_write_register(&mcp, MCP23017_IPOL, GPIOB, 0x00);  // Setze IPOL-Register, Port B
-      mcp23017_write_register(&mcp, MCP23017_GPPU, GPIOA, 0x00);  // Setze GPPU-Register, Port A
-      mcp23017_write_register(&mcp, MCP23017_GPIO, GPIOA, 0x00);  // Setze GPIOA-Pins auf LOW
-      mcp23017_write_register(&mcp, MCP23017_GPIO, GPIOB, 0xFF);  // Setze GPIOB-Pins auf HIGH
+      mcp23017_write_register(&mcp, MCP23017_IODIR, GPIOA, 0xFF);   // Alle Pins von Port A als Eingänge
+      mcp23017_write_register(&mcp, MCP23017_IODIR, GPIOB, 0x00);   // Alle Pins von Port B als Ausgänge
+      mcp23017_write_register(&mcp, MCP23017_IPOL, GPIOA, 0x00);    // Polarität Port A unverändert
+      mcp23017_write_register(&mcp, MCP23017_IPOL, GPIOB, 0x00);    // Polarität Port B unverändert
+      mcp23017_write_register(&mcp, MCP23017_GPPU, GPIOA, 0xFF);    // Pull-ups auf Kanal A aktivieren
+      mcp23017_write_register(&mcp, MCP23017_GPIO, GPIOA, 0x00);    // Setze GPIOA-Pins auf LOW
+      mcp23017_write_register(&mcp, MCP23017_GPIO, GPIOB, 0xFF);    // Setze GPIOB-Pins auf HIGH
       mcp23017_write_register(&mcp, MCP23017_GPINTEN, GPIOA, 0xFF); // Aktiviere Interrupts für alle GPIOA-Pins
       mcp23017_write_register(&mcp, MCP23017_GPINTEN, GPIOB, 0x00); // Deaktiviere Interrupts für alle GPIOB-Pins
-      mcp23017_write_register(&mcp, MCP23017_INTCON, GPIOA, 0xFF); // Setze INTCON-Register, Port A
-      mcp23017_write_register(&mcp, MCP23017_DEFVAL, GPIOA, 0xFF); // Setze DEFVAL-Register, Port A
-      mcp23017_write_register(&mcp, MCP23017_IOCON, GPIOA, 0x20); // Setze IOCON-Register
+      mcp23017_write_register(&mcp, MCP23017_INTCON, GPIOA, 0xFF);  // Interrupt auf Änderung
+      mcp23017_write_register(&mcp, MCP23017_DEFVAL, GPIOA, 0xFF);  // ergleichswert für Interrupts (nötig für INTCON)
+      mcp23017_write_register(&mcp, MCP23017_IOCON, GPIOA, 0x20);   // Interrupt auf aktives Low setzen, Mirror deaktiv
       uint8_t value;
-      mcp23017_read_register(&mcp, MCP23017_INTCAP, GPIOA, &value); // Lese INTCAP-Register clear Interrupts
+      mcp23017_read_register(&mcp, MCP23017_INTCAP, GPIOA, &value); // clear Interrupts
       ESP_LOGI(TAG, "INTCAP-Wert beim Interrupt: 0x%02X", value);
       if (err != MCP23017_ERR_OK)
       {
@@ -93,11 +120,14 @@ void app_main(void)
       ESP_LOGI(TAG, "MCP23017 konfiguriert %s", mcp23017_err_to_string(err));
       ESP_LOGI(TAG, "MCP23017 Port A = INPUTS, Interrupts akktiv LOW");
       ESP_LOGI(TAG, "MCP23017 Port B = OUTPUTS");
-      // Hier können Sie mit dem MCP23017 arbeiten
 
       // Endlose Schleife, um das Programm am Laufen zu halten
       while (1)
       {
-            vTaskDelay(pdMS_TO_TICKS(1000));
+            mcp23017_read_register(&mcp, MCP23017_GPIO, GPIOA, &captureValue); // Lese Port A
+            //processImpulses(captureValue);                                     // Verarbeite Impulse
+            mcp23017_write_register(&mcp, MCP23017_GPIO, GPIOB, captureValue); // Setze GPIOB-Pins Port B
+
+            vTaskDelay(pdMS_TO_TICKS(1));
       }
 }
