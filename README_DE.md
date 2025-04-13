@@ -1,6 +1,6 @@
 | Supported Targets | ESP32-C2/C3 | ESP32-C5/C6 | ESP32-H2 | ESP32-P4 | ESP32-S2/S3 | T-Display-S3/...S3-AMOLED |
 | ----------------- |  ---------- | ----------- | -------- | -------- | ----------- | ------------------------- |
-# esp-idf-i2c-mcp23017
+# esp-idf-i2c-mcp23017 New 2025
 ## Inhaltsverzeichnis
 - [Überblick](#überblick)
 - [Software-Vorrausetzungen](#software-vorrausetzungen)
@@ -12,7 +12,6 @@
 - [Besonderen Dank](#besonderen-dank)
 
 ## Überblick
-
 Dies ist eine Demoanwendung für den ESP32 in der ESP-IDF Umgebung V5.4 mit der neueren I2C-API "i2c_master".<br>
 In ESP-IDF 5.4 hat Espressif die I²C-API überarbeitet und verbessert. Daher musste die Header-Datei mcp23017.h erheblich angepasst werden.
 
@@ -20,7 +19,7 @@ Diese API-Struktur mit „Handles“ und Konfigurationsobjekten ist typisch für
 ```
 i2c_master_bus_handle_t bus_handle;
 i2c_master_bus_config_t bus_config = { ... };
-ret = i2c_new_master_bus(&bus_config, &bus_handle);
+err = i2c_new_master_bus(&bus_config, &bus_handle);
 ```
 Für weitere Informationen über die I²C-Adresse und andere I²C-Geräte, siehe hier:
 (https://i2cdevices.org/addresses)
@@ -36,7 +35,7 @@ Dieser Code wurde aktualisiert und mit den folgenden Versionen kompiliert:
 - I2C port expander MCP23017<br>
 - 2x 4K7 resistors<br>
 - USB cable<br>
-- cable for I2C (V+, GND, SDA und SCL)<br>
+- cable for I2C (V+, GND, SDA und SCL)
 
 ## Wie benutze ich das Projekt?
 Sie können diese Konfiguration für Ihr Projekt anpassen:
@@ -95,4 +94,5 @@ width="600" height="550">
 
 
 ## Besonderen Dank
-an NSBum. Er stellte den älteren Code zur Verfügung, den ich geändert/angepasst habe. https://github.com/NSBum/
+an NSBum. Er stellte den älteren Code zur Verfügung, den ich geändert/angepasst habe.
+https://github.com/NSBum/

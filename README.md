@@ -1,6 +1,6 @@
 | Supported Targets | ESP32-C2/C3 | ESP32-C5/C6 | ESP32-H2 | ESP32-P4 | ESP32-S2/S3 | T-Display-S3/...S3-AMOLED |
 | ----------------- |  ---------- | ----------- | -------- | -------- | ----------- | ------------------------- |
-# esp-idf-i2c-mcp23017
+# esp-idf-i2c-mcp23017 new 2025
 ## List of contents
 - [Overview](#overview)
 - [Software Required](#software-required)
@@ -20,7 +20,7 @@ This API structure with “handles” and configuration objects is typical for t
 ```
 i2c_master_bus_handle_t bus_handle;
 i2c_master_bus_config_t bus_config = { ... };
-ret = i2c_new_master_bus(&bus_config, &bus_handle);
+err = i2c_new_master_bus(&bus_config, &bus_handle);
 ```
 For more information on the I²C address and other I²C devices, see here:
 (https://i2cdevices.org/addresses)
@@ -36,7 +36,7 @@ This code has been updated and compiled with the following versions:
 - I2C port expander MCP23017<br>
 - 2x 4K7 resistors<br>
 - USB cable<br>
-- cable for I2C (V+, GND, SDA und SCL)<br>
+- cable for I2C (V+, GND, SDA und SCL)
 
 ## How to use this project
 You can customize this configuration for your project:
@@ -94,4 +94,5 @@ Press: shift + >  type: `ESP-IDF: Size Analyse of the Binaries`<br>
 width="600" height="550">
 
 ## Special thanks
-to NSBum. He provided the older code that I modified/adapted. https://github.com/NSBum/
+to NSBum. He provided the older code that I modified/adapted.
+https://github.com/NSBum/

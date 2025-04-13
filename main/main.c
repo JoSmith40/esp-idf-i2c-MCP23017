@@ -30,10 +30,8 @@ const int print_interval = 5000; // Ausgabe alle 1000 Iterationen
 
 #define NUM_INPUTS 8
 uint16_t counter[NUM_INPUTS] = {0}; // Array für die Zähler
-float kWh[NUM_INPUTS] = {0.0};      // Array für kWh
+float kWh[NUM_INPUTS] = {0.0};      // Array für kWh Werte
 
-uint8_t captureA = 0;
-uint8_t currentA = 0;
 uint8_t captureValue = 0;
 
 static const char *TAG = "main.c says";
@@ -55,7 +53,7 @@ void processImpulses(uint8_t captureValue)
 
 void app_main(void)
 {
-      esp_err_t ret;
+      esp_err_t err;
       // Declaration i2c bus handles
       i2c_master_bus_handle_t bus_handle;
 
@@ -72,8 +70,8 @@ void app_main(void)
           }};
 
       // Creating the I2C-Bus
-      ret = i2c_new_master_bus(&bus_config, &bus_handle);
-      if (ret != ESP_OK)
+      err = i2c_new_master_bus(&bus_config, &bus_handle);
+      if (err != ESP_OK)
       {
             ESP_LOGE(TAG, "I2C-Bus-Initialisierung fehlgeschlagen");
             return;
