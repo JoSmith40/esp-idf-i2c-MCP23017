@@ -87,13 +87,13 @@ void app_main(void)
       mcp.use_interrupts = true;
 
       // Initializing the MCP23017
-      mcp23017_err_t err = mcp23017_init(&mcp);
-      if (err != MCP23017_ERR_OK)
+      mcp23017_err_t mcp_err = mcp23017_init(&mcp);
+      if (mcp_err != MCP23017_ERR_OK)
       {
-            ESP_LOGE(TAG, "MCP23017 Initialization failed: %s", mcp23017_err_to_string(err));
+            ESP_LOGE(TAG, "MCP23017 Initialization failed: %s", mcp23017_err_to_string(mcp_err));
             return;
       }
-      ESP_LOGI(TAG, "MCP23017 initialized: %s", mcp23017_err_to_string(err));
+      ESP_LOGI(TAG, "MCP23017 initialized: %s", mcp23017_err_to_string(mcp_err));
       ESP_LOGI(TAG, "MCP23017 Address: 0x%02X", mcp.i2c_addr);
       ESP_LOGI(TAG, "I2C Speed: %u kHz", (unsigned int)(mcp.i2c_freq / 1000));
 
@@ -115,10 +115,10 @@ void app_main(void)
       ESP_LOGI(TAG, "INTCAP-Wert beim Interrupt: 0x%02X", value); // Optional: Log the INTCAP value
       if (err != MCP23017_ERR_OK)
       {
-            ESP_LOGE(TAG, "MCP23017 Konfiguration fehlgeschlagen: %s", mcp23017_err_to_string(err));
+            ESP_LOGE(TAG, "MCP23017 Konfiguration fehlgeschlagen: %s", mcp23017_err_to_string(mcp_err));
             return;
       }
-      ESP_LOGI(TAG, "MCP23017 config ok %s", mcp23017_err_to_string(err));
+      ESP_LOGI(TAG, "MCP23017 config ok %s", mcp23017_err_to_string(mcp_err));
       ESP_LOGI(TAG, "MCP23017 Port A = INPUTS, Interrupts active LOW");
       ESP_LOGI(TAG, "MCP23017 Port B = OUTPUTS");
       ESP_LOGI(TAG, "");
