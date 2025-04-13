@@ -28,9 +28,6 @@ int64_t total_time = 0;
 int iterations = 0;
 const int print_interval = 5000; // Ausgabe alle 1000 Iterationen
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Impulszähler für 8 Eingänge
-// ──────────────────────────────────────────────────────────────────────────────
 #define NUM_INPUTS 8
 uint16_t counter[NUM_INPUTS] = {0}; // Array für die Zähler
 float kWh[NUM_INPUTS] = {0.0};      // Array für kWh
@@ -39,7 +36,7 @@ uint8_t captureA = 0;
 uint8_t currentA = 0;
 uint8_t captureValue = 0;
 
-static const char *TAG = "main.c says: ";
+static const char *TAG = "main.c says";
 
 void processImpulses(uint8_t captureValue)
 {
@@ -59,10 +56,10 @@ void processImpulses(uint8_t captureValue)
 void app_main(void)
 {
       esp_err_t ret;
-      // Deklaration des i2c-Bus-Handles
+      // Declaration i2c bus handles
       i2c_master_bus_handle_t bus_handle;
 
-      // I2C-Bus-Konfiguration
+      // Configuration I2C bus
       i2c_master_bus_config_t bus_config = {
           .clk_source = I2C_CLK_SRC_DEFAULT,
           .i2c_port = -1,
@@ -74,7 +71,7 @@ void app_main(void)
               .enable_internal_pullup = 1,
           }};
 
-      // Erstellen des I2C-Bus
+      // Creating the I2C-Bus
       ret = i2c_new_master_bus(&bus_config, &bus_handle);
       if (ret != ESP_OK)
       {
@@ -88,21 +85,21 @@ void app_main(void)
       mcp.i2c_addr = MCP23017_ADDR;
       mcp.bus_handle = bus_handle;
       mcp.i2c_freq = I2C_FREQ_HZ;
-      mcp.int_pin = 5; // Beispiel-Interrupt-Pin (anpassen)
+      mcp.int_pin = 5; // Adjust as required
       mcp.use_interrupts = true;
 
       // Initializing the MCP23017
       mcp23017_err_t err = mcp23017_init(&mcp);
       if (err != MCP23017_ERR_OK)
       {
-            ESP_LOGE(TAG, "MCP23017 Initialisierung fehlgeschlagen: %s", mcp23017_err_to_string(err));
+            ESP_LOGE(TAG, "MCP23017 Initialization failed: %s", mcp23017_err_to_string(err));
             return;
       }
-      ESP_LOGI(TAG, "MCP23017 initialisiert: %s", mcp23017_err_to_string(err));
+      ESP_LOGI(TAG, "MCP23017 initialized: %s", mcp23017_err_to_string(err));
       ESP_LOGI(TAG, "MCP23017 Address: 0x%02X", mcp.i2c_addr);
       ESP_LOGI(TAG, "I2C Speed: %u kHz", (unsigned int)(mcp.i2c_freq / 1000));
 
-      // Configuration MCP23017 for System
+      // Configuration MCP23017 for System, 8x Inputs, 8x Outputs
       mcp23017_write_register(&mcp, MCP23017_IODIR, GPIOA, 0xFF);   // Alle Pins von Port A als Eingänge
       mcp23017_write_register(&mcp, MCP23017_IODIR, GPIOB, 0x00);   // Alle Pins von Port B als Ausgänge
       mcp23017_write_register(&mcp, MCP23017_IPOL, GPIOA, 0x00);    // Polarität Port A unverändert
@@ -117,30 +114,31 @@ void app_main(void)
       mcp23017_write_register(&mcp, MCP23017_IOCON, GPIOA, 0x20);   // Interrupt auf aktives Low setzen, Mirror deaktiv
       uint8_t value;
       mcp23017_read_register(&mcp, MCP23017_INTCAP, GPIOA, &value); // clear Interrupts
-      ESP_LOGI(TAG, "INTCAP-Wert beim Interrupt: 0x%02X", value);
+      ESP_LOGI(TAG, "INTCAP-Wert beim Interrupt: 0x%02X", value); // Optional: Log the INTCAP value
       if (err != MCP23017_ERR_OK)
       {
             ESP_LOGE(TAG, "MCP23017 Konfiguration fehlgeschlagen: %s", mcp23017_err_to_string(err));
             return;
       }
-      ESP_LOGI(TAG, "MCP23017 konfiguriert %s", mcp23017_err_to_string(err));
-      ESP_LOGI(TAG, "MCP23017 Port A = INPUTS, Interrupts akktiv LOW");
+      ESP_LOGI(TAG, "MCP23017 config ok %s", mcp23017_err_to_string(err));
+      ESP_LOGI(TAG, "MCP23017 Port A = INPUTS, Interrupts active LOW");
       ESP_LOGI(TAG, "MCP23017 Port B = OUTPUTS");
+      ESP_LOGI(TAG, "");
 
-      // Endlose Schleife, um das Programm am Laufen zu halten
+
+
+      // Endless loop to keep the program running
       while (1)
       {
             start_time = esp_timer_get_time(); // Startzeit in Mikrosekunden
 
+            mcp23017_read_register(&mcp, MCP23017_GPIO, GPIOA, &captureValue); // Read port A
+            processImpulses(captureValue);                                     // Process impulses
+            mcp23017_write_register(&mcp, MCP23017_GPIO, GPIOB, captureValue); // Set GPIOB pins port B
 
-            mcp23017_read_register(&mcp, MCP23017_GPIO, GPIOA, &captureValue); // Lese Port A
-            processImpulses(captureValue);                                    // Verarbeite Impulse
-            mcp23017_write_register(&mcp, MCP23017_GPIO, GPIOB, captureValue); // Setze GPIOB-Pins Port B
+            //vTaskDelay(pdMS_TO_TICKS(1)); // Optional: Delay of 1ms
 
-            //vTaskDelay(pdMS_TO_TICKS(1));
-
-
-            // Binäre Darstellung der GPIO-Werte (optional)
+            // Binary representation of GPIO values (optional)
             char bin_str[9];
             for (int i = 0; i < 8; i++) {
                 bin_str[i] = (captureValue & (0x80 >> i)) ? '1' : '0';
@@ -148,17 +146,17 @@ void app_main(void)
             bin_str[8] = '\0';
 
 
-            // Zeitmessung in µs
-            end_time = esp_timer_get_time(); // Endzeit in Mikrosekunden
-            elapsed_time = end_time - start_time; // Berechnung der verstrichenen Zeit
-            total_time += elapsed_time; // Gesamtzeit aktualisieren
-            iterations++; // Iterationen erhöhen
+            // Timing in µs
+            end_time = esp_timer_get_time(); // End time in microseconds
+            elapsed_time = end_time - start_time; // Calculation of elapsed time
+            total_time += elapsed_time; // Update total time
+            iterations++; // Increase iterations
 
-            // Statistik ausgeben
+            // Output statistics
             if (iterations % print_interval == 0)
             {
-                  ESP_LOGI(TAG, "GPIO-Wert: 0x%02X (Bits: %s)", captureValue, bin_str);
-                  ESP_LOGI(TAG, "Zeitmessung: Aktuelle Iteration: %lld µs, Durchschnitt: %lld µs",
+                  ESP_LOGI(TAG, "Port B: 0x%02X (Bits: %s)", captureValue, bin_str);
+                  ESP_LOGI(TAG, "Time measurement: Current iteration: %lld µs, Average: %lld µs",
                            elapsed_time, total_time / iterations);
             }
       }

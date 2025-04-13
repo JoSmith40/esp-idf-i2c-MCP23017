@@ -4,5 +4,6 @@
 # CMakeLists in this exact order for cmake to work correctly
 cmake_minimum_required(VERSION 3.16)
 
-include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+##include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+include(/Users/juergen/esp/V5.4/esp-idf/tools/cmake/project.cmake)
 project(esp-idf-i2c-MCP23017)

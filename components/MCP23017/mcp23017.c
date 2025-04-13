@@ -6,7 +6,7 @@
 
 #include "esp_log.h"
 
-static const char *TAG = "mcp23017.c says: ";
+static const char *TAG = "mcp23017.c says";
 
 /**
  * @brief Konvertiert einen MCP23017-Fehlercode in einen lesbaren String
